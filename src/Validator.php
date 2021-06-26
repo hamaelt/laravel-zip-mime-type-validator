@@ -1,18 +1,14 @@
 <?php
 
-namespace hamaelt\ZipValidator;
+namespace Hamaelt\ZipValidator;
 
+use finfo;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
-use Orkhanahmadov\ZipValidator\Exceptions\ZipException;
 use ZipArchive;
 
 class Validator
 {
-    /**
-     * @var string
-     */
-    private string $rule;
-
     /**
      * @var array
      */
@@ -21,12 +17,12 @@ class Validator
     /**
      * Validator constructor.
      *
-     * @param string $rule
+     * @param string $fileTypes
      */
-    public function __construct(string $rule)
+    public function __construct(string $fileTypes)
     {
-        $this->rule = $rule;
-        $this->allowedMimeTypes = $this->getAllowedMimeTypes($rule);
+        $this->allowedMimeTypes = $this->getMimeTypes($fileTypes);
+        var_dump($this->allowedMimeTypes);
     }
 
     /**
@@ -63,39 +59,6 @@ class Validator
     }
 
     /**
-     * @param Collection $zipContent
-     * @param string|int $value
-     * @param string|int $key
-     *
-     * @return bool
-     */
-    public function checkFile(Collection $zipContent, $value, $key): bool
-    {
-        if (! is_int($value)) {
-            $entityName = $this->contains($zipContent->pluck('name'), $value);
-
-            if ($this->allowEmpty) {
-                return (bool) $entityName;
-            }
-
-            return $zipContent->firstWhere('name', $entityName)['size'] > 0;
-        }
-
-        $entityName = $this->contains($zipContent->pluck('name'), $key);
-        if (! $entityName) {
-            return false;
-        }
-
-        $entitySize = $zipContent->firstWhere('name', $entityName)['size'];
-
-        if ($this->allowEmpty) {
-            return $entitySize <= $value;
-        }
-
-        return $entitySize > 0 && $entitySize <= $value;
-    }
-
-    /**
      * Checks if file name exists in ZIP file. Returns matching file name, null otherwise.
      *
      * @param Collection $names
@@ -115,28 +78,28 @@ class Validator
     /**
      * Reads ZIP file content and returns collection with result.
      *
-     * @param string $filePath
-     *
-     * @return Collection
+     * @param UploadedFile $file
+     * @return bool
      */
-    private function readContent(string $filePath): Collection
+    public function validateZipFile(UploadedFile $file): bool
     {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
         $zip = new ZipArchive();
-        $zipOpen = $zip->open($filePath);
-        throw_unless($zipOpen === true, new ZipException($zipOpen));
-
-        $content = collect();
-        for ($i = 0; $i < $zip->count(); $i++) {
-            $content->add($zip->statIndex($i));
+        $zip->open($file->getPathname());
+        for($i = 0;$i < $zip->count(); $i++) {
+            var_dump($finfo->buffer($zip->getFromIndex($i)));
+            if(!in_array($finfo->buffer($zip->getFromIndex($i)), ['application/pdf','application/octet-stream'])){
+                $this->mimeType = $finfo->buffer($zip->getFromIndex($i));
+                $zip->close();
+                return false;
+            }
+            print_r('file_1 :: ');
+            var_dump($finfo->buffer($zip->getFromIndex($i)));
         }
-
-        $zip->close();
-
-        return $content;
     }
 
-    private function getAllowedMimeTypes(String $rule): array
+    private function getMimeTypes(String $fileTypes): array
     {
-        return explode('|',$rule);
+        return explode('|',$fileTypes);
     }
 }

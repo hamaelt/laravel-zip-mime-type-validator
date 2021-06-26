@@ -1,5 +1,5 @@
 {
-    "name": "hamaeltahir/zip-mime-type-validator",
+    "name": "hamaelt/zip-mime-type-validator",
     "description": "Laravel zip file mime type validator",
     "type": "library",
     "keywords": [
@@ -27,12 +27,12 @@
     },
     "autoload": {
         "psr-4": {
-            "hamaelt\\ZipValidator\\": "src"
+            "Hamaelt\\ZipValidator\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "hamaelt\\ZipValidator\\Tests\\": "tests"
+            "Hamaelt\\ZipValidator\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -41,14 +41,6 @@
             "standard-version",
             "git push --follow-tags origin main"
         ]
-
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "hamaelt\\ZipValidator\\ServiceProvider"
-            ]
-        }
     }
 }
 

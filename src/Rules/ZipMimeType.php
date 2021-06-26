@@ -1,22 +1,20 @@
 <?php
 
-namespace hamaelt\ZipValidator\Rules;
+namespace Hamaelt\ZipValidator\Rules;
 
 use Illuminate\Contracts\Validation\Rule;
-use hamaelt\ZipValidator\Validator;
+use Hamaelt\ZipValidator\Validator;
 
-class ZipContent implements Rule
+class ZipMimeType implements Rule
 {
 
-    private const ZIP = 'application/zip';
+    const ZIP = 'application/zip';
 
-    private $validate;
+    private Validator $validator;
 
     /**
      * Create a new rule instance.
-     *
-     * @param array|string $files
-     * @param bool|string $allowEmpty
+     * @param string $rule
      */
     public function __construct(string $rule)
     {
@@ -26,28 +24,18 @@ class ZipContent implements Rule
     /**
      * Determine if the validation rule passes.
      *
-     * @param string $attribute
-     * @param \Illuminate\Http\UploadedFile $zipFile
+     * @param  $attribute
+     * @param  $file
      * @return bool
      */
-    public function passes($attribute, $file): bool
+    public function passes($attribute,$file): bool
     {
         if($file->getMimeType() !== self::ZIP) {
             return true;
         }
-       
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $zip = new \ZipArchive();
-        $zip->open($file->getPathname());
-        for($i = 0;$i <$zip->count(); $i++) {
-            if(!in_array($finfo->buffer($zip->getFromIndex($i)), ['applicataion/pdf'])){
-                $this->mimeType = $finfo->buffer($zip->getFromIndex($i));
-                $zip->close();
-                return false;
-            }
-        }
-        return true;
-   
+
+        return $this->validator->validateZipFile($file);
+
     }
 
     /**
@@ -55,10 +43,10 @@ class ZipContent implements Rule
      *
      * @return string
      */
-    public function message(): string
+    public function message()
     {
         return __('zipValidator::messages.failed', [
-            'files' => $this->failedFiles->implode(', '),
+            'files' => $this->failedFiles->implode(',s'),
         ]);
     }
 }
