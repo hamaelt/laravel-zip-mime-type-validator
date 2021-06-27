@@ -1,11 +1,15 @@
 <?php
 
+
 namespace Hamaelt\ZipValidator;
 
 use finfo;
+use Hamaelt\ZipValidator\Exception\InvalidMimeTypeException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Mockery\Exception;
 use ZipArchive;
+use Hamaelt\ZipValidator\MimeTypes;
 
 class Validator
 {
@@ -15,29 +19,31 @@ class Validator
     private array $allowedMimeTypes;
 
     /**
+     * @var finfo
+     */
+    private finfo $finfo;
+
+    /**
+     * @var ZipArchive
+     */
+    private ZipArchive $zip;
+
+    /**
      * Validator constructor.
      *
      * @param string $fileTypes
      */
     public function __construct(string $fileTypes)
     {
-        $this->allowedMimeTypes = $this->getMimeTypes($fileTypes);
-        var_dump($this->allowedMimeTypes);
+        $this->finfo = new finfo(FILEINFO_MIME_TYPE);
+        $this->zip = new ZipArchive();
+        try {
+            $this->allowedMimeTypes = $this->getMimeTypes($fileTypes);
+        } catch (\Exception $exception) {
+            throw new \Exception('Invalid MimeType provided');
+        }
     }
 
-    /**
-     * Static function instantiate Validator class with given rules
-     *
-     * @param array|string $files
-     *
-     * @param bool $allowEmpty
-     *
-     * @return Validator
-     */
-    public static function rules($files, bool $allowEmpty = true): Validator
-    {
-        return new static($files, $allowEmpty);
-    }
 
     /**
      * Validates ZIP content with given file path.
@@ -58,22 +64,6 @@ class Validator
             });
     }
 
-    /**
-     * Checks if file name exists in ZIP file. Returns matching file name, null otherwise.
-     *
-     * @param Collection $names
-     * @param string $search
-     *
-     * @return string|null
-     */
-    public function contains(Collection $names, string $search): ?string
-    {
-        $options = explode('|', $search);
-
-        return $names->first(function ($name) use ($options) {
-            return in_array($name, $options);
-        });
-    }
 
     /**
      * Reads ZIP file content and returns collection with result.
@@ -83,23 +73,25 @@ class Validator
      */
     public function validateZipFile(UploadedFile $file): bool
     {
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $zip = new ZipArchive();
-        $zip->open($file->getPathname());
-        for($i = 0;$i < $zip->count(); $i++) {
-            var_dump($finfo->buffer($zip->getFromIndex($i)));
-            if(!in_array($finfo->buffer($zip->getFromIndex($i)), ['application/pdf','application/octet-stream'])){
-                $this->mimeType = $finfo->buffer($zip->getFromIndex($i));
-                $zip->close();
+        $this->zip->open($file->getPathname());
+        for ($i = 0; $i < $this->zip->count(); $i++) {
+            if (!in_array($this->finfo->buffer($this->zip->getFromIndex($i)), $this->allowedMimeTypes)) {
+                $this->mimeType = $this->finfo->buffer($this->zip->getFromIndex($i));
+                $this->zip->close();
                 return false;
             }
-            print_r('file_1 :: ');
-            var_dump($finfo->buffer($zip->getFromIndex($i)));
         }
+        return true;
     }
 
-    private function getMimeTypes(String $fileTypes): array
+    private function getMimeTypes(string $fileTypes): array
     {
-        return explode('|',$fileTypes);
+        $types = explode('|', $fileTypes);
+        foreach ($types as $type) {
+            $this->allowedMimeTypes[] = MimeTypes::$mimeTypes[$type];
+        }
+        $this->allowedMimeTypes[] = 'application/octet-stream';
+
+        return $this->allowedMimeTypes;
     }
 }
