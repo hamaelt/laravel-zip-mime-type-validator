@@ -2,12 +2,12 @@
 
 namespace Hamaelt\ZipValidator\Rules;
 
+use Hamaelt\ZipValidator\Exception\InvalidMimeTypeException;
 use Illuminate\Contracts\Validation\Rule;
 use Hamaelt\ZipValidator\Validator;
 
 class ZipMimeType implements Rule
 {
-
     const ZIP = 'application/zip';
 
     private Validator $validator;
@@ -15,6 +15,7 @@ class ZipMimeType implements Rule
     /**
      * Create a new rule instance.
      * @param string $rule
+     * @throws InvalidMimeTypeException
      */
     public function __construct(string $rule)
     {
@@ -28,14 +29,12 @@ class ZipMimeType implements Rule
      * @param  $file
      * @return bool
      */
-    public function passes($attribute,$file): bool
+    public function passes($attribute, $file): bool
     {
-        if($file->getMimeType() !== self::ZIP) {
+        if ($file->getMimeType() !== self::ZIP) {
             return true;
         }
-
         return $this->validator->validateZipFile($file);
-
     }
 
     /**
@@ -45,8 +44,6 @@ class ZipMimeType implements Rule
      */
     public function message()
     {
-        return __('zipValidator::messages.failed', [
-            'files' => $this->failedFiles->implode(',s'),
-        ]);
+        return 'Zip contains invalid files';
     }
 }

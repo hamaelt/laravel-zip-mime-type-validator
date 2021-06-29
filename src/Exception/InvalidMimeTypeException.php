@@ -1,13 +1,10 @@
 <?php
 namespace Hamaelt\ZipValidator\Exception;
 
-
-use Illuminate\Foundation\Exceptions\Handler;
-
-class InvalidMimeTypeException extends Handler
+class InvalidMimeTypeException extends \Exception
 {
     public function __construct($message)
     {
-        return 'error';
+        Parent::__construct($message);
     }
 }

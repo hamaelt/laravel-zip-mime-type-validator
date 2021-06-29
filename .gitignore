@@ -1,3 +1,4 @@
 /vendor/
 .idea
 .DS_store
+php-cs-fixer-v2.phar

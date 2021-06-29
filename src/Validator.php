@@ -6,10 +6,7 @@ namespace Hamaelt\ZipValidator;
 use finfo;
 use Hamaelt\ZipValidator\Exception\InvalidMimeTypeException;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Collection;
-use Mockery\Exception;
 use ZipArchive;
-use Hamaelt\ZipValidator\MimeTypes;
 
 class Validator
 {
@@ -40,28 +37,8 @@ class Validator
         try {
             $this->allowedMimeTypes = $this->getMimeTypes($fileTypes);
         } catch (\Exception $exception) {
-            throw new \Exception('Invalid MimeType provided');
+            throw new InvalidMimeTypeException('Invalid MimeType provided');
         }
-    }
-
-
-    /**
-     * Validates ZIP content with given file path.
-     *
-     * @param string $filePath
-     *
-     * @return Collection
-     */
-    public function validate(string $filePath): Collection
-    {
-        $zipContent = $this->readContent($filePath);
-
-        return $this->files
-            ->reject(function ($value, $key) use ($zipContent) {
-                return $this->checkFile($zipContent, $value, $key);
-            })->map(function ($value, $key) {
-                return is_int($key) ? $value : $key;
-            });
     }
 
 
