@@ -2,7 +2,7 @@
 
 namespace Hamaelt\ZipValidator\Tests;
 
-use Hamaelt\ZipValidator\Exception\InvalidMimeTypeException;
+use Hamaelt\ZipValidator\Exception\InvalidFileTypeException;
 use Hamaelt\ZipValidator\Rules\ZipMimeType;
 use Illuminate\Http\UploadedFile;
 
@@ -16,7 +16,7 @@ class ValidatorTest extends TestCase
      */
     public function validation_should_pass()
     {
-        $validator = new ZipMimeType('pdf|png|jpg');
+        $validator = new ZipMimeType('pdf,png,jpg');
         $result = $validator->passes('file', $this->getFile('file.zip'));
         $this->assertTrue($result);
     }
@@ -28,7 +28,7 @@ class ValidatorTest extends TestCase
      */
     public function validation_should_fail()
     {
-        $validator = new ZipMimeType('pdf|png|jpg');
+        $validator = new ZipMimeType('pdf,png,jpg');
         $result = $validator->passes('file', $this->getFile('file-sql.zip'));
 
         $this->assertFalse($result);
@@ -37,9 +37,18 @@ class ValidatorTest extends TestCase
     /** @test */
     public function it_should_through_exception_when_invalid_mime_type_is_given()
     {
-        $this->expectException(InvalidMimeTypeException::class);
-        $validator = new ZipMimeType('jpgg');
+        $this->expectException(InvalidFileTypeException::class);
+        $validator = new ZipMimeType('pngppp');
         $validator->passes('file', $this->getFile('file.zip'));
+    }
+
+    /** @test */
+    public function it_should_fail_when_invalid_file_is_passed()
+    {
+        $validator = new ZipMimeType('jpg,pdf');
+        $result = $validator->passes('file', 'string');
+
+        $this->assertFalse($result);
     }
 
     public function getFile(string $fileName)

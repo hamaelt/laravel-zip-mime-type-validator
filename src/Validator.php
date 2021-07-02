@@ -4,8 +4,9 @@
 namespace Hamaelt\ZipValidator;
 
 use finfo;
-use Hamaelt\ZipValidator\Exception\InvalidMimeTypeException;
+use Hamaelt\ZipValidator\Exception\InvalidFileTypeException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use ZipArchive;
 
 class Validator
@@ -37,7 +38,7 @@ class Validator
         try {
             $this->allowedMimeTypes = $this->getMimeTypes($fileTypes);
         } catch (\Exception $exception) {
-            throw new InvalidMimeTypeException('Invalid MimeType provided');
+            throw new InvalidFileTypeException('Invalid File type provided.');
         }
     }
 
@@ -50,20 +51,25 @@ class Validator
      */
     public function validateZipFile(UploadedFile $file): bool
     {
+        $mimeTypes = $this->getUploadedFileMimeTypes($file);
+
+        return $mimeTypes->every(fn (string $mimeType) => in_array($mimeType, $this->allowedMimeTypes));
+    }
+
+    private function getUploadedFileMimeTypes(UploadedFile $file): Collection
+    {
+        $mimeTypes = collect([]);
         $this->zip->open($file->getPathname());
         for ($i = 0; $i < $this->zip->count(); $i++) {
-            if (!in_array($this->finfo->buffer($this->zip->getFromIndex($i)), $this->allowedMimeTypes)) {
-                $this->mimeType = $this->finfo->buffer($this->zip->getFromIndex($i));
-                $this->zip->close();
-                return false;
-            }
+            $mimeTypes->push($this->finfo->buffer($this->zip->getFromIndex($i)));
         }
-        return true;
+
+        return $mimeTypes->filter(fn (string $mimeType) => $mimeType !== 'application/octet-stream');
     }
 
     private function getMimeTypes(string $fileTypes): array
     {
-        $types = explode('|', $fileTypes);
+        $types = explode(',', $fileTypes);
         foreach ($types as $type) {
             $this->allowedMimeTypes[] = MimeTypes::$mimeTypes[$type];
         }

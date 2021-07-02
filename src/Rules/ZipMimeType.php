@@ -2,9 +2,10 @@
 
 namespace Hamaelt\ZipValidator\Rules;
 
-use Hamaelt\ZipValidator\Exception\InvalidMimeTypeException;
+use Hamaelt\ZipValidator\Exception\InvalidFileTypeException;
 use Illuminate\Contracts\Validation\Rule;
 use Hamaelt\ZipValidator\Validator;
+use Illuminate\Http\UploadedFile;
 
 class ZipMimeType implements Rule
 {
@@ -12,14 +13,19 @@ class ZipMimeType implements Rule
 
     private Validator $validator;
 
+    private string $message;
+
+    private string $rules;
+
     /**
      * Create a new rule instance.
-     * @param string $rule
-     * @throws InvalidMimeTypeException
+     * @param string $rules
+     * @throws InvalidFileTypeException
      */
-    public function __construct(string $rule)
+    public function __construct(string $rules)
     {
-        $this->validator = new Validator($rule);
+        $this->rules = $rules;
+        $this->validator = new Validator($rules);
     }
 
     /**
@@ -31,10 +37,13 @@ class ZipMimeType implements Rule
      */
     public function passes($attribute, $file): bool
     {
-        if ($file->getMimeType() !== self::ZIP) {
-            return true;
+        if (!$file instanceof UploadedFile || $file->getMimeType() !== self::ZIP) {
+            $this->message = "Uploaded file must be a Zip file.";
+            return false;
         }
-        return $this->validator->validateZipFile($file);
+        $this->message = "Zip contains invalid files. File must be one of {$this->rules}";
+
+        return $this->validator->validapteZipFile($file);
     }
 
     /**
@@ -42,8 +51,8 @@ class ZipMimeType implements Rule
      *
      * @return string
      */
-    public function message()
+    public function message(): string
     {
-        return 'Zip contains invalid files';
+        return $this->message;
     }
 }

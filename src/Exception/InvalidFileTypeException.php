@@ -1,7 +1,7 @@
 <?php
 namespace Hamaelt\ZipValidator\Exception;
 
-class InvalidMimeTypeException extends \Exception
+class InvalidFileTypeException extends \Exception
 {
     public function __construct($message)
     {
