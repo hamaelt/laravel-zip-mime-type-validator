@@ -1,5 +1,6 @@
 {
     "name": "hamaelt/zip-mime-type-validator",
+    "version": "1.0.0",
     "description": "Laravel zip file mime type validator",
     "type": "library",
     "keywords": [
