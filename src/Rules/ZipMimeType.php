@@ -43,7 +43,7 @@ class ZipMimeType implements Rule
         }
         $this->message = "Zip contains invalid files. File must be one of {$this->rules}";
 
-        return $this->validator->validapteZipFile($file);
+        return $this->validator->validateZipFile($file);
     }
 
     /**
